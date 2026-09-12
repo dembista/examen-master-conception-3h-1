@@ -1,0 +1,70 @@
+@startuml
+skinparam classAttributeIconSize 0
+
+interface Configuration {
+  +freeShippingThresholdCents(): long
+  +maximumWeightGrams(): long
+}
+class DefaultConfiguration <<Singleton>> {
+  -DefaultConfiguration()
+  +instance(): DefaultConfiguration
+}
+Configuration <|.. DefaultConfiguration
+
+class Product {
+  -reference: String
+  -priceCents: long
+  -weightGrams: long
+}
+class FragileProduct {
+  -packagingInstruction: String
+}
+Product <|-- FragileProduct
+class Catalog {
+  -name: String
+  -products: Set<Product>
+  +add(product): void
+}
+Catalog o-- "0..*" Product : agrège
+
+interface ShippingStrategy {
+  +feesCents(subtotalCents, totalWeightGrams): long
+}
+class StandardShipping
+class ExpressShipping
+class StorePickup
+ShippingStrategy <|.. StandardShipping
+ShippingStrategy <|.. ExpressShipping
+ShippingStrategy <|.. StorePickup
+StandardShipping --> Configuration
+
+interface Notifier {
+  +notify(customerId, validatedTotalCents): void
+}
+class ConsoleNotifier
+Notifier <|.. ConsoleNotifier
+
+enum OrderState {
+  BROUILLON
+  VALIDEE
+}
+class Order {
+  -customerId: String
+  -state: OrderState
+  -validatedTotalCents: Long
+  +addLine(product, quantity): void
+  +changeShippingStrategy(strategy): void
+  +validate(): void
+  +totalCents(): long
+}
+class OrderLine {
+  -product: Product
+  -quantity: int
+}
+Order *-- "0..*" OrderLine : compose
+OrderLine --> "1" Product
+Order --> "1" ShippingStrategy : délègue
+Order --> "1" Configuration : injectée
+Order ..> Notifier : notifie ponctuellement
+Order --> OrderState
+@enduml
