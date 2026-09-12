@@ -1,0 +1,22 @@
+@startuml
+actor Client
+participant Order
+participant ShippingStrategy
+participant Configuration
+participant Notifier
+
+Client -> Order: validate()
+alt commande vide ou poids dépassé
+  Order -> Configuration: maximumWeightGrams()
+  Configuration --> Order: limite
+  Order --> Client: BusinessRuleException
+else règles respectées
+  Order -> Order: subtotal + totalWeight
+  Order -> ShippingStrategy: feesCents(subtotal, poids)
+  ShippingStrategy --> Order: frais
+  Order -> Order: figer total et état VALIDEE
+  Order -> Notifier: notify(clientId, total)
+  Notifier --> Order: retour
+  Order --> Client: succès
+end
+@enduml
